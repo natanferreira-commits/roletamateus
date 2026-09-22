@@ -1011,6 +1011,49 @@ h1 .hl {
   to { filter: drop-shadow(0 0 10px rgba(242, 193, 78, 0.85)); }
 }
 
+/* giro extra: o gomo acende em roxo, mais contido que o prêmio final */
+.roleta.bonus .gomo.bonus {
+  fill: #8f7cff;
+  animation: bonusPulsa 0.7s ease-in-out infinite alternate;
+}
+.roleta.bonus .roleta-borda {
+  stroke: #8f7cff;
+  animation: bonusPulsa 0.7s ease-in-out infinite alternate;
+}
+@keyframes bonusPulsa {
+  from { filter: none; }
+  to { filter: drop-shadow(0 0 10px rgba(143, 124, 255, 0.85)); }
+}
+.roleta.bonus .roleta-bulbo { animation-duration: 0.3s; }
+.roleta.bonus .roleta-bulbo.b { animation-delay: 0.15s; }
+.roleta-screen.bonus .roleta-brilho {
+  background: radial-gradient(circle, rgba(143, 124, 255, 0.28), rgba(143, 124, 255, 0) 68%);
+}
+
+/* "quase": o gomo vazio fica avermelhado e o ponteiro treme, como quem passou raspando */
+.roleta.quase .gomo.vazio {
+  fill: #4a2230;
+}
+.roleta.quase .roleta-ponteiro {
+  animation: ponteiroTreme 0.5s ease-out both;
+}
+@keyframes ponteiroTreme {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-8deg); }
+  45% { transform: rotate(6deg); }
+  70% { transform: rotate(-3deg); }
+}
+
+/* contador de giros, entre um giro e outro */
+.roleta-contador {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+  animation: sobe 0.35s ease both;
+}
+
 .roleta-lead {
   position: relative;
   z-index: 1;

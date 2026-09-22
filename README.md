@@ -11,17 +11,20 @@ Tudo fica na seção `roleta` no fim do `config.js`. Ela sobrescreve `seo`, `mar
 
 | Campo | O que é |
 | --- | --- |
-| `roleta.gomos` | Gomos da roda, em ordem. `{ texto, premio: true }` marca o único gomo onde ela sempre para; os outros são decorativos. |
+| `roleta.gomos` | Gomos da roda, em ordem horária. A roleta só para em três: `premio: true` (VIP + banca, fim do jogo), `bonus: true` (giro extra, soma `bonusGiros`) e `vazio: true` ("quase" — o ponteiro para nele encostado na divisa com o prêmio, então deixe esse gomo vizinho do prêmio). Os outros são decorativos. |
+| `roleta.girosIniciais` | Giros que o visitante tem ao entrar (aparece no contador "Você tem N giros"). |
+| `roleta.bonusGiros` | Quantos giros o gomo GIRO EXTRA adiciona. |
+| `roleta.premioMin` / `premioMax` | O prêmio cai num giro sorteado nessa faixa. Com `premioMin: 2` nunca cai de primeira. |
 | `roleta.voltas` | Voltas completas antes de parar. Mais voltas = giro mais demorado e mais suspense. |
-| `roleta.duracaoMs` | Duração total do giro. O ponteiro "tec-teca" no mesmo ritmo da desaceleração real, calculado a partir dessa curva — não é só decoração solta. |
-| `roleta.titulo`, `subtitulo`, `ctaLabel`, `ctaHint`, `comoFunciona` | Copy da tela da roleta. |
+| `roleta.duracaoMs` | Duração de cada giro. O ponteiro "tec-teca" no mesmo ritmo da desaceleração real, calculado a partir dessa curva — não é só decoração solta. |
+| `roleta.titulo`, `subtitulo`, `quaseTitulo`, `quaseSub`, `bonusTitulo`, `bonusSub`, `ctaLabel`, `ctaQuase`, `ctaBonus`, `ctaHint`, `contadorLabel`, `contadorUm`, `comoFunciona` | Copy da tela da roleta. |
 | `bilhete.premio` | Linhas do bilhete do prêmio (`item` / `valor`). `premioNome` é o que vai gravado no Supabase e aparece no chip do bilhete. |
 | `rodada.id` | Vai em todo evento (GA4 e Supabase). Troque a cada ação nova pra separar no `/admin`. |
 | `rodada.encerramento`, `fechaLabel`, `encerradoLabel` | Contador no rodapé fixo. |
 
-A roleta sempre para no gomo marcado como `premio: true`: não existe sorteio de verdade, todo mundo que gira ganha. Os outros gomos só dão a sensação real de roleta — ela nunca para neles.
+Não existe sorteio de "se" alguém ganha — todo mundo que gira até o fim cai no prêmio. O que é sorteado, uma vez por visitante ao abrir a página (`sortearRoteiro` no `page.js`), é o **roteiro**: em qual giro o prêmio cai (entre `premioMin` e `premioMax`) e, antes dele, em qual giro a roleta para no GIRO EXTRA (+`bonusGiros` giros). Os outros giros param no gomo QUASE, colado na divisa com o prêmio. Com os valores padrão (2 giros iniciais, prêmio no 2º ou 3º giro) as sequências possíveis são: giro extra → prêmio; giro extra → quase → prêmio; quase → giro extra → prêmio. O bônus sempre sai antes dos giros iniciais acabarem, e se restar um único giro ele cai no prêmio.
 
-Eventos: `cta_start` (girou), `roleta_premio` (parou no prêmio), `bilhete_view`, `whatsapp_click`. O bilhete é salvo na mesma tabela `bilhetes`, com o prêmio no campo `palpites`, então o `/admin` funciona sem mudar o banco.
+Eventos: `cta_start` (primeiro giro), `giro` (giros que caem no QUASE), `giro_premio` (o giro que cai no prêmio), `bonus`, `quase`, `roleta_premio` (parou no prêmio), `bilhete_view`, `whatsapp_click`. O bilhete é salvo na mesma tabela `bilhetes`, com o prêmio e o número de giros no campo `palpites`, então o `/admin` funciona sem mudar o banco.
 
 O visual evita clichê de mesa de cassino (sem vermelho/preto, sem ficha, sem carta): paleta dourada/escura igual ao resto do site, com glow e anéis suaves atrás da roda em vez de luzes piscando. A tela de prêmio também é mais sóbria que uma tela de "vitória" — um chip único com o nome do prêmio, confete discreto, sem flash.
 

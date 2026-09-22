@@ -217,7 +217,7 @@ const roleta = {
   },
   palpites: [],
 
-  marquee: ["Roleta do Caumo", "8 prêmios", "VIP", "iPhone", "Freebet", "Camisa oficial", "Grátis"],
+  marquee: ["Roleta do Caumo", "8 prêmios", "VIP", "iPhone", "Freebet", "Giros extras", "Camisa oficial", "Grátis"],
 
   roleta: {
     label: "Roleta do Caumo",
@@ -225,33 +225,53 @@ const roleta = {
     subtitulo: "8 prêmios concorrendo: VIP, banca, freebet, camisa oficial e mais. Grátis, sem depósito.",
     ctaLabel: "Girar a roleta",
     ctaGirando: "Girando",
-    ctaHint: "Grátis. Um giro libera o prêmio.",
+    ctaQuase: "Girar de novo",
+    ctaBonus: "Liberando seus giros...",
+    ctaHint: "Grátis. Gira até cair no prêmio.",
+    quaseTitulo: "Passou raspando!",
+    quaseSub: "Parou a um gomo do prêmio. Você ainda tem giros, gira de novo.",
+    bonusTitulo: "Giro extra! +3 giros",
+    bonusSub: "A roleta tá generosa hoje. Continua girando.",
     ganhouTitulo: "Prêmio garantido",
     ganhouSub: "Preparando o seu bilhete",
+    // Giros que o visitante ainda tem. "{n}" é o número; contadorUm é a versão no singular.
+    contadorLabel: "Você tem {n} giros",
+    contadorUm: "Último giro",
     comoFunciona: [
-      "Gira a roleta",
-      "Caiu no prêmio, registra no WhatsApp",
+      "Gira a roleta: cada giro pode dar giros extras ou o prêmio",
+      "Caiu no VIP + banca, registra no WhatsApp",
       "Recebe o acesso ao VIP e a banca",
     ],
-    // Gomos da roleta, em ordem ao redor do círculo. "premio: true" marca onde ela sempre para.
-    // Os demais são decorativos (a roleta nunca para neles) — dão variedade real de prêmios,
-    // pra não parecer que só tem um prêmio possível (roleta "viciada").
-    // "dourado: true" pinta o gomo de dourado só por variedade visual — não é o prêmio real,
-    // que nunca é destacado (se destacasse só ele, ia entregar o "pulo do gato" antes de girar).
+    // Gomos da roleta, em ordem horária a partir do topo. A roleta só para em três tipos:
+    //   premio: true → VIP + banca (fim do jogo)
+    //   bonus: true  → giro extra, soma bonusGiros ao contador
+    //   vazio: true  → "quase": o ponteiro para nele encostado na divisa com o prêmio, então deixe
+    //                  esse gomo logo depois (ou logo antes) do gomo do prêmio
+    // Os demais são decorativos (nunca param embaixo do ponteiro) — dão variedade real de prêmios.
+    // "dourado: true" pinta o gomo de dourado só por variedade visual — o prêmio real nunca é destacado
+    // antes de girar (se destacasse só ele, ia entregar o "pulo do gato").
     gomos: [
       { texto: "VIP + BANCA", icone: "👑", premio: true },
-      { texto: "CAMISA OFICIAL", icone: "👕", dourado: true },
+      { texto: "QUASE", icone: "😬", vazio: true },
       { texto: "IPHONE", icone: "📱" },
-      { texto: "APOSTA BLINDADA", icone: "🛡️" },
-      { texto: "FREEBET", icone: "🎟️", dourado: true },
-      { texto: "CASHBACK", icone: "💸" },
-      { texto: "ACESSO VIP", icone: "🔑" },
-      { texto: "GIRO EXTRA", icone: "🔄", dourado: true },
+      { texto: "GIRO EXTRA", icone: "🔄", bonus: true, dourado: true },
+      { texto: "FREEBET", icone: "🎟️" },
+      { texto: "CASHBACK", icone: "💸", dourado: true },
+      { texto: "CAMISA OFICIAL", icone: "👕" },
+      { texto: "APOSTA BLINDADA", icone: "🛡️", dourado: true },
     ],
+    // Roteiro sorteado por visitante, ao abrir a página:
+    // - o prêmio cai num giro entre premioMin e premioMax (nunca no primeiro, pra não parecer roleta viciada)
+    // - antes dele, um giro sorteado para no GIRO EXTRA (+bonusGiros); os outros param no QUASE
+    // Quem entra tem girosIniciais giros; o bônus sempre cai antes deles acabarem, e o prêmio antes de zerar.
+    girosIniciais: 2,
+    bonusGiros: 3,
+    premioMin: 2,
+    premioMax: 3,
     // Voltas completas antes de parar (mais voltas = giro mais demorado e mais suspense)
-    voltas: 7,
-    // Duração total do giro, em ms
-    duracaoMs: 6200,
+    voltas: 5,
+    // Duração de cada giro, em ms (são até 3 giros por visitante, então mais curto que o giro único de antes)
+    duracaoMs: 4600,
   },
 
   bilhete: {

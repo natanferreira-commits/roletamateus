@@ -614,7 +614,7 @@ function Roda({ gomos, deg, girando }) {
           const pIcone = pontoCirculo(CENTRO, CENTRO, RAIO * 0.62, meio);
           let rot = meio;
           if (rot > 90 && rot < 270) rot += 180;
-          const classe = `${g.premio ? " premio" : ""}${g.dourado ? " dourado" : ""}${i % 2 ? " par" : ""}`;
+          const classe = `${g.premio ? " premio" : ""}${g.bonus ? " bonus" : ""}${g.vazio ? " vazio" : ""}${g.dourado ? " dourado" : ""}${i % 2 ? " par" : ""}`;
           return (
             <g key={i}>
               <path d={fatiaPath(CENTRO, CENTRO, RAIO, a0, a1)} className={`gomo${classe}`} />
@@ -639,37 +639,71 @@ function Roda({ gomos, deg, girando }) {
   );
 }
 
+// Sorteia, por visitante, em qual giro o prêmio cai e em qual sai o bônus de giros.
+// O bônus vem sempre antes do prêmio e antes dos giros iniciais acabarem, pra ninguém travar sem giro.
+function sortearRoteiro({ girosIniciais, bonusGiros, premioMin, premioMax }) {
+  const ini = Math.max(1, girosIniciais || 1);
+  const min = Math.max(1, premioMin || 1);
+  const max = Math.max(min, premioMax || min);
+  const premio = min + Math.floor(Math.random() * (max - min + 1));
+  const tetoBonus = Math.min(premio - 1, ini);
+  const bonus = bonusGiros > 0 && tetoBonus >= 1 ? 1 + Math.floor(Math.random() * tetoBonus) : 0;
+  return { premio, bonus };
+}
+
 function Roleta({ onWin }) {
   const { roleta: r, aviso } = config;
   const n = r.gomos.length;
   const seg = 360 / n;
-  // "parado" | "girando" | "ganhou"
+  // "parado" | "girando" | "quase" | "bonus" | "ganhou"
   const [estado, setEstado] = useState("parado");
   const [deg, setDeg] = useState(0);
   const [tick, setTick] = useState(0);
+  const [giros, setGiros] = useState(0);
+  const [bonusSaiu, setBonusSaiu] = useState(false);
+  const [roteiro] = useState(() => sortearRoteiro(r));
   const timers = useRef([]).current;
 
   useEffect(() => () => timers.forEach(clearTimeout), [timers]);
   const depois = (fn, ms) => timers.push(setTimeout(fn, ms));
 
-  function girar() {
-    if (estado !== "parado") return;
-    track("cta_start");
-    const idxPremio = Math.max(0, r.gomos.findIndex((g) => g.premio));
-    const centro = idxPremio * seg + seg / 2;
-    const folga = (Math.random() - 0.5) * (seg * 0.5);
-    const alvoMod = ((360 - (centro + folga)) % 360 + 360) % 360;
-    const total = r.voltas * 360 + alvoMod;
+  const restantes = Math.max(1, r.girosIniciais || 1) + (bonusSaiu ? r.bonusGiros || 0 : 0) - giros;
 
+  const idxPremio = Math.max(0, r.gomos.findIndex((g) => g.premio));
+  const idxBonus = r.gomos.findIndex((g) => g.bonus);
+  const idxVazio = r.gomos.findIndex((g) => g.vazio);
+
+  function girar() {
+    if (estado !== "parado" && estado !== "quase") return;
+    const g = giros + 1;
+    const ehBonus = !bonusSaiu && g === roteiro.bonus && idxBonus >= 0;
+    // cai no prêmio no giro sorteado, ou no último giro que sobrou, o que vier primeiro
+    const vence = !ehBonus && (g >= roteiro.premio || restantes <= 1 || idxVazio < 0);
+    track(g === 1 ? "cta_start" : vence ? "giro_premio" : "giro", { etapa: g });
+
+    // onde o ponteiro para: prêmio e bônus no meio do gomo (com folga); "quase" encostado na divisa com o prêmio
+    let idx = vence ? idxPremio : ehBonus ? idxBonus : idxVazio;
+    let vies = (Math.random() - 0.5) * 0.5;
+    if (!vence && !ehBonus) {
+      if ((idx - idxPremio + n) % n === 1) vies = -0.34;
+      else if ((idxPremio - idx + n) % n === 1) vies = 0.34;
+    }
+    const centro = idx * seg + seg / 2 + vies * seg;
+    const alvoMod = ((360 - centro) % 360 + 360) % 360;
+    const atualMod = ((deg % 360) + 360) % 360;
+    const delta = r.voltas * 360 + ((alvoMod - atualMod + 360) % 360);
+    const total = deg + delta;
+
+    setGiros(g);
     setEstado("girando");
     setDeg(total);
 
     // agenda o "tec-tec" do ponteiro no mesmo ritmo da desaceleração real do giro
     const amostras = 90;
-    let ultimoGomo = 0;
+    let ultimoGomo = Math.floor(deg / seg);
     for (let i = 1; i <= amostras; i++) {
       const tNorm = i / amostras;
-      const angulo = facilitar(tNorm) * total;
+      const angulo = deg + facilitar(tNorm) * delta;
       const gomoAtual = Math.floor(angulo / seg);
       if (gomoAtual !== ultimoGomo) {
         ultimoGomo = gomoAtual;
@@ -678,18 +712,32 @@ function Roleta({ onWin }) {
     }
 
     depois(() => {
-      setEstado("ganhou");
-      track("roleta_premio");
-      depois(onWin, 1400);
+      if (vence) {
+        setEstado("ganhou");
+        track("roleta_premio", { etapa: g });
+        depois(() => onWin(g), 1400);
+      } else if (ehBonus) {
+        setEstado("bonus");
+        setBonusSaiu(true);
+        track("bonus", { etapa: g, giros: r.bonusGiros });
+        depois(() => setEstado("parado"), 1900);
+      } else {
+        setEstado("quase");
+        track("quase", { etapa: g });
+      }
     }, r.duracaoMs + 120);
   }
 
   const girando = estado === "girando";
   const ganhou = estado === "ganhou";
-  const cta = girando ? r.ctaGirando : r.ctaLabel;
+  const quase = estado === "quase";
+  const bonus = estado === "bonus";
+  const cta = girando ? r.ctaGirando : bonus ? r.ctaBonus : quase ? r.ctaQuase : r.ctaLabel;
+  const contador =
+    restantes === 1 ? r.contadorUm || "Último giro" : (r.contadorLabel || "Você tem {n} giros").replace("{n}", String(restantes));
 
   return (
-    <div className={`page roleta-screen${ganhou ? " ganhou" : ""}`}>
+    <div className={`page roleta-screen${ganhou ? " ganhou" : ""}${bonus ? " bonus" : ""}`}>
       <div className="roleta-fundo" aria-hidden="true">
         <div className="roleta-brilho" />
         <div className="roleta-anel roleta-anel-1" />
@@ -702,11 +750,17 @@ function Roleta({ onWin }) {
       <main className="wrap">
         <section className="hero compacto roleta-copy">
           <span className="label">{r.label}</span>
-          <h1 key={estado}>{ganhou ? r.ganhouTitulo : <Highlight text={r.titulo} />}</h1>
-          <p className="lead">{ganhou ? r.ganhouSub : r.subtitulo}</p>
+          <h1 key={estado}>
+            {ganhou ? r.ganhouTitulo : bonus ? r.bonusTitulo : quase ? r.quaseTitulo : <Highlight text={r.titulo} />}
+          </h1>
+          <p className="lead">{ganhou ? r.ganhouSub : bonus ? r.bonusSub : quase ? r.quaseSub : r.subtitulo}</p>
+          {!ganhou && !bonus && !girando && <p className="roleta-contador">{contador}</p>}
         </section>
 
-        <section className={`roleta${girando ? " girando" : ""}${ganhou ? " ganhou" : ""}`} style={{ "--roleta-dur": `${r.duracaoMs}ms` }}>
+        <section
+          className={`roleta${girando ? " girando" : ""}${ganhou ? " ganhou" : ""}${quase ? " quase" : ""}${bonus ? " bonus" : ""}`}
+          style={{ "--roleta-dur": `${r.duracaoMs}ms` }}
+        >
           <span className="roleta-ponteiro" key={tick} aria-hidden="true" />
           <Roda gomos={r.gomos} deg={deg} girando={girando} />
         </section>
@@ -730,7 +784,7 @@ function Roleta({ onWin }) {
       </main>
 
       <StickyCta hint={<Countdown fallback={r.ctaHint} />}>
-        <button className="btn" onClick={girar} disabled={girando || ganhou}>
+        <button className="btn" onClick={girar} disabled={girando || ganhou || bonus}>
           {cta} <Arrow />
         </button>
       </StickyCta>
@@ -739,13 +793,16 @@ function Roleta({ onWin }) {
 }
 
 // ============= ROLETA: PRÊMIO =============
-function Premio({ codigo, onVoltar, onHome }) {
+function Premio({ codigo, giros, onVoltar, onHome }) {
   const { bilhete, rodada } = config;
   const link = montarLinkWhatsApp([], codigo);
 
   useEffect(() => {
     track("bilhete_view", { codigo }, "ViewContent");
-    salvarBilhete(codigo, [{ jogo: rodada.nome, mercado: "Prêmio", escolha: bilhete.premioNome }]);
+    salvarBilhete(codigo, [
+      { jogo: rodada.nome, mercado: "Prêmio", escolha: bilhete.premioNome },
+      { jogo: rodada.nome, mercado: "Giros até o prêmio", escolha: String(giros) },
+    ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codigo]);
 
@@ -816,6 +873,7 @@ export default function Home() {
   const [step, setStep] = useState(ehRoleta ? "roleta" : "landing");
   const [escolhas, setEscolhas] = useState([]);
   const [codigo, setCodigo] = useState("");
+  const [giros, setGiros] = useState(1);
 
   useEffect(() => {
     enviarEvento("page_view");
@@ -833,11 +891,12 @@ export default function Home() {
 
   if (ehRoleta) {
     const voltar = () => setStep("roleta");
-    if (step === "premio") return <Premio codigo={codigo} onVoltar={voltar} onHome={voltar} />;
+    if (step === "premio") return <Premio codigo={codigo} giros={giros} onVoltar={voltar} onHome={voltar} />;
     return (
       <Roleta
         key={step}
-        onWin={() => {
+        onWin={(g) => {
+          setGiros(g);
           setCodigo(gerarCodigo());
           setStep("premio");
         }}
