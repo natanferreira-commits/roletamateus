@@ -234,16 +234,17 @@ const roleta = {
       "Recebe o acesso ao VIP e a banca",
     ],
     // Gomos da roleta, em ordem ao redor do círculo. "premio: true" marca onde ela sempre para.
-    // Os demais são decorativos (a roleta nunca para neles) — só dão a sensação real de roleta.
+    // Os demais são decorativos (a roleta nunca para neles) — dão variedade real de prêmios,
+    // pra não parecer que só tem um prêmio possível (roleta "viciada").
     gomos: [
       { texto: "VIP + BANCA", premio: true },
-      { texto: "★" },
-      { texto: "GRÁTIS" },
-      { texto: "◆" },
-      { texto: "BÔNUS" },
-      { texto: "●" },
-      { texto: "VIP" },
-      { texto: "▲" },
+      { texto: "CAMISA OFICIAL" },
+      { texto: "IPHONE" },
+      { texto: "APOSTA BLINDADA" },
+      { texto: "FREEBET" },
+      { texto: "CASHBACK" },
+      { texto: "ACESSO VIP" },
+      { texto: "GIRO EXTRA" },
     ],
     // Voltas completas antes de parar (mais voltas = giro mais demorado e mais suspense)
     voltas: 7,
@@ -254,8 +255,8 @@ const roleta = {
   bilhete: {
     slipTitulo: "Roleta do Caumo",
     label: "Seu prêmio",
-    titulo: "Registra no WhatsApp pra resgatar",
-    subtitulo: "Sem registro o prêmio não é liberado. Aperta o botão que a mensagem já vai com o número do seu bilhete.",
+    titulo: "Resgate seu prêmio no WhatsApp!",
+    subtitulo: "Aperta o botão abaixo: a mensagem já vai pronta, com o número do seu bilhete.",
     ctaLabel: "Resgatar no WhatsApp",
     ctaHint: "Abre o WhatsApp com o número do seu prêmio",
     refazerLabel: "Girar de novo",

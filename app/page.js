@@ -578,14 +578,32 @@ function curvaBezier(x1, y1, x2, y2) {
 const EASING = [0.1, 0.82, 0.14, 1];
 const facilitar = curvaBezier(...EASING);
 
-const RAIO = 148;
-const CENTRO = 160;
+const RAIO = 146;
+const CENTRO = 175;
+const ANEL_R = 163;
+const VIEWBOX = 350;
+
+// anel de lâmpadas fixo na moldura, não gira com o disco — como uma roleta de prêmio de verdade
+function AnelLuzes({ n = 20 }) {
+  const bulbos = Array.from({ length: n }, (_, i) => {
+    const ang = (360 / n) * i;
+    return { ...pontoCirculo(CENTRO, CENTRO, ANEL_R, ang), i };
+  });
+  return (
+    <>
+      {bulbos.map((b) => (
+        <circle key={b.i} cx={b.x} cy={b.y} r="5.5" className={`roleta-bulbo${b.i % 2 ? " b" : ""}`} />
+      ))}
+    </>
+  );
+}
 
 function Roda({ gomos, deg, girando }) {
   const n = gomos.length;
   const seg = 360 / n;
   return (
-    <svg viewBox="0 0 320 320" className="roleta-svg">
+    <svg viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`} className="roleta-svg">
+      <circle cx={CENTRO} cy={CENTRO} r={ANEL_R + 12} className="roleta-moldura" />
       <g
         className={girando ? "roleta-disco girando" : "roleta-disco"}
         style={{ transform: `rotate(${deg}deg)`, transformOrigin: `${CENTRO}px ${CENTRO}px` }}
@@ -623,7 +641,8 @@ function Roda({ gomos, deg, girando }) {
         })}
         <circle cx={CENTRO} cy={CENTRO} r={RAIO} className="roleta-borda" />
       </g>
-      <circle cx={CENTRO} cy={CENTRO} r="20" className="roleta-cubo" />
+      <AnelLuzes />
+      <circle cx={CENTRO} cy={CENTRO} r="22" className="roleta-cubo" />
     </svg>
   );
 }
