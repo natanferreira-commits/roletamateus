@@ -185,10 +185,11 @@ function Particulas() {
   );
 }
 
-const CONFETE = Array.from({ length: 26 }, (_, i) => ({
+// Confete mais discreto e mais lento: reforça o momento sem virar tela de caça-níquel
+const CONFETE = Array.from({ length: 14 }, (_, i) => ({
   x: (i * 37) % 100,
-  d: (i % 7) * 0.12,
-  t: 1.6 + (i % 5) * 0.25,
+  d: (i % 7) * 0.18,
+  t: 2.6 + (i % 5) * 0.35,
   r: (i * 53) % 360,
   c: i % 3 === 0 ? "#fff" : i % 3 === 1 ? "#f2c14e" : "#b8861f",
 }));
@@ -540,157 +541,171 @@ function Bilhete({ escolhas, codigo, onRefazer, onHome }) {
   );
 }
 
-// ============= JACKPOT: MÁQUINA =============
-// Altura de cada símbolo no rolo (bate com --sym no CSS)
-const SYM_H = 72;
-// Cópias da fita de símbolos: precisa sobrar fita abaixo da posição de parada
-const COPIAS = 5;
-// Quando cada rolo para depois de puxar a alavanca (ms)
-const PARADAS = [750, 1450, 2350];
-// Duração da desaceleração do rolo (ms), igual ao transition no CSS
-const FREIO = 950;
+// ============= ROLETA =============
+// Ponto na borda do círculo pra um ângulo em graus, 0° = topo, sentido horário
+function pontoCirculo(cx, cy, r, deg) {
+  const rad = (deg * Math.PI) / 180;
+  return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
+}
 
-function Luzes({ n = 14 }) {
+// Fatia de pizza em SVG, do ângulo a0 ao a1 (graus, sentido horário a partir do topo)
+function fatiaPath(cx, cy, r, a0, a1) {
+  const p0 = pontoCirculo(cx, cy, r, a0);
+  const p1 = pontoCirculo(cx, cy, r, a1);
+  const grande = a1 - a0 > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A ${r} ${r} 0 ${grande} 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} Z`;
+}
+
+// Curva de desaceleração do giro — igual à transition-timing-function do CSS,
+// usada aqui só pra cronometrar o "tec-tec" do ponteiro no mesmo ritmo da roleta.
+function curvaBezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const amostraX = (t) => ((ax * t + bx) * t + cx) * t;
+  const amostraY = (t) => ((ay * t + by) * t + cy) * t;
+  return (x) => {
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      const dx = amostraX(t) - x;
+      if (Math.abs(dx) < 1e-4) break;
+      const d = (3 * ax * t + 2 * bx) * t + cx;
+      if (Math.abs(d) < 1e-6) break;
+      t -= dx / d;
+    }
+    return amostraY(t);
+  };
+}
+const EASING = [0.1, 0.82, 0.14, 1];
+const facilitar = curvaBezier(...EASING);
+
+const RAIO = 148;
+const CENTRO = 160;
+
+function Roda({ gomos, deg, girando }) {
+  const n = gomos.length;
+  const seg = 360 / n;
   return (
-    <div className="maq-luzes" aria-hidden="true">
-      {Array.from({ length: n }, (_, i) => (
-        <span key={i} className={i % 2 ? "b" : "a"} />
-      ))}
-    </div>
+    <svg viewBox="0 0 320 320" className="roleta-svg">
+      <g
+        className={girando ? "roleta-disco girando" : "roleta-disco"}
+        style={{ transform: `rotate(${deg}deg)`, transformOrigin: `${CENTRO}px ${CENTRO}px` }}
+      >
+        {gomos.map((g, i) => {
+          const a0 = i * seg;
+          const a1 = a0 + seg;
+          const meio = a0 + seg / 2;
+          const pTexto = pontoCirculo(CENTRO, CENTRO, RAIO * 0.66, meio);
+          let rot = meio;
+          if (rot > 90 && rot < 270) rot += 180;
+          // rótulos com espaço (ex: "VIP + BANCA") quebram em duas linhas pra caber no gomo
+          const linhas = g.texto.includes(" ") ? g.texto.split(" ") : [g.texto];
+          const lh = 13;
+          const dyInicial = -((linhas.length - 1) * lh) / 2;
+          return (
+            <g key={i}>
+              <path d={fatiaPath(CENTRO, CENTRO, RAIO, a0, a1)} className={`gomo${g.premio ? " premio" : ""}${i % 2 ? " par" : ""}`} />
+              <text
+                x={pTexto.x}
+                y={pTexto.y}
+                transform={`rotate(${rot} ${pTexto.x} ${pTexto.y})`}
+                className={`gomo-texto${g.premio ? " premio" : ""}`}
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                {linhas.map((linha, li) => (
+                  <tspan key={li} x={pTexto.x} dy={li === 0 ? dyInicial : lh}>
+                    {linha}
+                  </tspan>
+                ))}
+              </text>
+            </g>
+          );
+        })}
+        <circle cx={CENTRO} cy={CENTRO} r={RAIO} className="roleta-borda" />
+      </g>
+      <circle cx={CENTRO} cy={CENTRO} r="20" className="roleta-cubo" />
+    </svg>
   );
 }
 
-function Rolo({ simbolos, fase, pos, atraso }) {
-  const n = simbolos.length;
-  const fita = useMemo(() => Array.from({ length: COPIAS }, () => simbolos).flat(), [simbolos]);
-  // posição canônica na 2ª cópia (deixa fita acima e abaixo pra janela de 3 símbolos)
-  const canon = -(n + pos - 1) * SYM_H;
-  // parada na 4ª cópia: sempre abaixo de onde a animação pode estar, então o rolo só desce
-  const alvo = -(3 * n + pos - 1) * SYM_H;
-  let style;
-  if (fase === "girando") style = { "--from": canon + "px", animationDelay: atraso + "ms" };
-  else if (fase === "parando") style = { transform: `translateY(${alvo}px)` };
-  else style = { transform: `translateY(${canon}px)` };
-  return (
-    <div className={`rolo ${fase}`}>
-      <div className="rolo-fita" style={style}>
-        {fita.map((s, i) => (
-          <span key={i} className={`sym s-${s === simbolos[0] ? "top" : i % n}`}>
-            {s}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Maquina({ onWin }) {
-  const { maquina, aviso } = config;
-  const S = maquina.simbolos;
-  const n = S.length;
-  // "parado" | "girando" | "quase" | "ganhou"
+function Roleta({ onWin }) {
+  const { roleta: r, aviso } = config;
+  const n = r.gomos.length;
+  const seg = 360 / n;
+  // "parado" | "girando" | "ganhou"
   const [estado, setEstado] = useState("parado");
-  const [giros, setGiros] = useState(0);
-  const [puxada, setPuxada] = useState(false);
-  const [rolos, setRolos] = useState(() => [1, 3, 4].map((pos) => ({ fase: "parado", pos: pos % n })));
+  const [deg, setDeg] = useState(0);
+  const [tick, setTick] = useState(0);
   const timers = useRef([]).current;
 
   useEffect(() => () => timers.forEach(clearTimeout), [timers]);
   const depois = (fn, ms) => timers.push(setTimeout(fn, ms));
 
-  function puxar() {
-    if (estado !== "parado" && estado !== "quase") return;
-    const g = giros + 1;
-    const vence = g >= Math.max(1, maquina.giroVencedor || 1);
-    setGiros(g);
-    setPuxada(true);
-    depois(() => setPuxada(false), 700);
-    track(g === 1 ? "cta_start" : "giro", { etapa: g });
-    setEstado("girando");
-    setRolos((r) => r.map((x) => ({ ...x, fase: "girando" })));
+  function girar() {
+    if (estado !== "parado") return;
+    track("cta_start");
+    const idxPremio = Math.max(0, r.gomos.findIndex((g) => g.premio));
+    const centro = idxPremio * seg + seg / 2;
+    const folga = (Math.random() - 0.5) * (seg * 0.5);
+    const alvoMod = ((360 - (centro + folga)) % 360 + 360) % 360;
+    const total = r.voltas * 360 + alvoMod;
 
-    // parada: jackpot = 3 símbolos do topo; "quase" = dois setes e o terceiro cai no vizinho
-    const alvo = vence ? [0, 0, 0] : [0, 0, 1];
-    alvo.forEach((pos, i) => {
-      depois(() => {
-        setRolos((r) => r.map((x, j) => (j === i ? { fase: "parando", pos } : x)));
-        depois(() => setRolos((r) => r.map((x, j) => (j === i ? { fase: "parado", pos } : x))), FREIO + 60);
-      }, PARADAS[i]);
-    });
-    depois(() => {
-      if (vence) {
-        setEstado("ganhou");
-        track("jackpot", { etapa: g });
-        depois(() => onWin(g), 1700);
-      } else {
-        setEstado("quase");
-        track("quase", { etapa: g });
+    setEstado("girando");
+    setDeg(total);
+
+    // agenda o "tec-tec" do ponteiro no mesmo ritmo da desaceleração real do giro
+    const amostras = 90;
+    let ultimoGomo = 0;
+    for (let i = 1; i <= amostras; i++) {
+      const tNorm = i / amostras;
+      const angulo = facilitar(tNorm) * total;
+      const gomoAtual = Math.floor(angulo / seg);
+      if (gomoAtual !== ultimoGomo) {
+        ultimoGomo = gomoAtual;
+        depois(() => setTick((t) => t + 1), tNorm * r.duracaoMs);
       }
-    }, PARADAS[2] + FREIO - 150);
+    }
+
+    depois(() => {
+      setEstado("ganhou");
+      track("roleta_premio");
+      depois(onWin, 1400);
+    }, r.duracaoMs + 120);
   }
 
   const girando = estado === "girando";
   const ganhou = estado === "ganhou";
-  const quase = estado === "quase";
-  const cta = girando ? maquina.ctaGirando : quase ? maquina.ctaQuase : maquina.ctaLabel;
+  const cta = girando ? r.ctaGirando : r.ctaLabel;
 
   return (
-    <div className={`page maq-screen${ganhou ? " ganhou" : ""}`}>
+    <div className={`page roleta-screen${ganhou ? " ganhou" : ""}`}>
+      <div className="roleta-fundo" aria-hidden="true">
+        <div className="roleta-brilho" />
+        <div className="roleta-anel roleta-anel-1" />
+        <div className="roleta-anel roleta-anel-2" />
+        <Particulas />
+      </div>
       <Marquee />
       <Header right={config.rodada.nome} />
-      {ganhou && <Confete />}
 
       <main className="wrap">
-        <section className="hero compacto maq-copy">
-          <span className="label">{maquina.label}</span>
-          <h1 key={estado}>
-            {ganhou ? maquina.ganhouTitulo : quase ? maquina.quaseTitulo : <Highlight text={maquina.titulo} />}
-          </h1>
-          <p className="lead">{ganhou ? maquina.ganhouSub : quase ? maquina.quaseSub : maquina.subtitulo}</p>
+        <section className="hero compacto roleta-copy">
+          <span className="label">{r.label}</span>
+          <h1 key={estado}>{ganhou ? r.ganhouTitulo : <Highlight text={r.titulo} />}</h1>
+          <p className="lead">{ganhou ? r.ganhouSub : r.subtitulo}</p>
         </section>
 
-        <section className={`maq${girando ? " girando" : ""}${ganhou ? " ganhou" : ""}${quase ? " quase" : ""}`}>
-          <div className="maq-cab">
-            <div className="maq-topo">
-              <Luzes />
-              <div className="maq-letreiro">{ganhou ? maquina.letreiroGanhou : maquina.letreiro}</div>
-              <Luzes />
-            </div>
-
-            <div className="maq-janela">
-              <div className="rolos">
-                {rolos.map((r, i) => (
-                  <Rolo key={i} simbolos={S} fase={r.fase} pos={r.pos} atraso={i * 90} />
-                ))}
-              </div>
-              <div className="maq-linha" aria-hidden="true" />
-            </div>
-
-            <div className="maq-base" aria-hidden="true">
-              <span className="maq-ficha" />
-              <span className="maq-ficha" />
-              <span className="maq-ficha" />
-              <button className="maq-botao" onClick={puxar} disabled={girando || ganhou} aria-label={cta} tabIndex={-1} />
-            </div>
-          </div>
-
-          <button
-            className={`alavanca${puxada ? " puxada" : ""}`}
-            onClick={puxar}
-            disabled={girando || ganhou}
-            aria-label={cta}
-          >
-            <span className="alavanca-haste" />
-            <span className="alavanca-bola" />
-          </button>
+        <section className={`roleta${girando ? " girando" : ""}${ganhou ? " ganhou" : ""}`} style={{ "--roleta-dur": `${r.duracaoMs}ms` }}>
+          <span className="roleta-ponteiro" key={tick} aria-hidden="true" />
+          <Roda gomos={r.gomos} deg={deg} girando={girando} />
         </section>
 
-        <p className="lead maq-lead">{config.oferta.valor} {config.oferta.regra}.</p>
+        <p className="lead roleta-lead">{config.oferta.valor} {config.oferta.regra}.</p>
 
         <section className="bloco">
           <h2 className="bloco-titulo">Como funciona</h2>
           <ol className="passos">
-            {maquina.comoFunciona.map((t, i) => (
+            {r.comoFunciona.map((t, i) => (
               <li key={i}>
                 <span className="passo-num">{i + 1}</span>
                 {t}
@@ -703,8 +718,8 @@ function Maquina({ onWin }) {
         <Rodape />
       </main>
 
-      <StickyCta hint={<Countdown fallback={maquina.ctaHint} />}>
-        <button className="btn" onClick={puxar} disabled={girando || ganhou}>
+      <StickyCta hint={<Countdown fallback={r.ctaHint} />}>
+        <button className="btn" onClick={girar} disabled={girando || ganhou}>
           {cta} <Arrow />
         </button>
       </StickyCta>
@@ -712,17 +727,14 @@ function Maquina({ onWin }) {
   );
 }
 
-// ============= JACKPOT: PRÊMIO =============
-function Premio({ codigo, giros, onVoltar, onHome }) {
+// ============= ROLETA: PRÊMIO =============
+function Premio({ codigo, onVoltar, onHome }) {
   const { bilhete, rodada } = config;
   const link = montarLinkWhatsApp([], codigo);
 
   useEffect(() => {
     track("bilhete_view", { codigo }, "ViewContent");
-    salvarBilhete(codigo, [
-      { jogo: "Jackpot", mercado: "Prêmio", escolha: bilhete.premioNome },
-      { jogo: "Jackpot", mercado: "Giros até cravar", escolha: String(giros) },
-    ]);
+    salvarBilhete(codigo, [{ jogo: rodada.nome, mercado: "Prêmio", escolha: bilhete.premioNome }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codigo]);
 
@@ -753,10 +765,8 @@ function Premio({ codigo, giros, onVoltar, onHome }) {
               <CodigoRolando codigo={codigo} />
             </div>
           </div>
-          <div className="slip-jackpot" aria-hidden="true">
-            <span>7</span>
-            <span>7</span>
-            <span>7</span>
+          <div className="slip-premio-chip">
+            <span>{bilhete.premioNome}</span>
           </div>
           <ul className="slip-lista">
             {bilhete.premio.map((p, i) => (
@@ -791,11 +801,10 @@ function Premio({ codigo, giros, onVoltar, onHome }) {
 
 // ============= APP =============
 export default function Home() {
-  const jackpot = config.modo === "jackpot";
-  const [step, setStep] = useState(jackpot ? "maquina" : "landing");
+  const ehRoleta = config.modo === "roleta";
+  const [step, setStep] = useState(ehRoleta ? "roleta" : "landing");
   const [escolhas, setEscolhas] = useState([]);
   const [codigo, setCodigo] = useState("");
-  const [giros, setGiros] = useState(1);
 
   useEffect(() => {
     enviarEvento("page_view");
@@ -811,14 +820,13 @@ export default function Home() {
     setStep(config.loading.segundos > 0 ? "loading" : "bilhete");
   }
 
-  if (jackpot) {
-    const voltar = () => setStep("maquina");
-    if (step === "premio") return <Premio codigo={codigo} giros={giros} onVoltar={voltar} onHome={voltar} />;
+  if (ehRoleta) {
+    const voltar = () => setStep("roleta");
+    if (step === "premio") return <Premio codigo={codigo} onVoltar={voltar} onHome={voltar} />;
     return (
-      <Maquina
+      <Roleta
         key={step}
-        onWin={(g) => {
-          setGiros(g);
+        onWin={() => {
           setCodigo(gerarCodigo());
           setStep("premio");
         }}

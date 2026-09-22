@@ -1,12 +1,12 @@
 // ============================================================
 //  CONFIG — troque só o que está aqui
 //
-//  modo: "jackpot"  → máquina caça-níquel (Jackpot do Caumo). Copy e regras na seção `jackpot` lá embaixo.
-//  modo: "bolao"    → bolão de palpites (Brasileirão 2026, 28ª rodada). Tudo abaixo continua valendo.
+//  modo: "roleta"  → roleta premiada (Roleta do Caumo). Copy e regras na seção `roleta` lá embaixo.
+//  modo: "bolao"   → bolão de palpites (Brasileirão 2026, 28ª rodada). Tudo abaixo continua valendo.
 // ============================================================
 
 const base = {
-  modo: "jackpot",
+  modo: "roleta",
 
   // >>> WhatsApp que recebe o bilhete (só dígitos, com DDI+DDD) <<<
   // Ex: "5511999999999"
@@ -188,71 +188,77 @@ const base = {
 };
 
 // ============================================================
-//  JACKPOT DO CAUMO — só vale quando base.modo === "jackpot"
+//  ROLETA DO CAUMO — só vale quando base.modo === "roleta"
 //  Sobrescreve seo, marquee, oferta, rodada, bilhete e aviso.
-//  Prêmio de quem crava: acesso ao VIP + banca. O resgate é no WhatsApp.
+//  Prêmio de quem gira: acesso ao VIP + banca. O resgate é no WhatsApp.
 // ============================================================
-const jackpot = {
-  whatsappMensagem: "Cravei o jackpot! Quero resgatar meu prêmio #{codigo}",
+const roleta = {
+  whatsappMensagem: "Girei a roleta e caí no prêmio! Quero resgatar #{codigo}",
 
   seo: {
-    titulo: "Jackpot do Caumo — puxa a alavanca e leva VIP + banca",
-    descricao: "Puxa a alavanca da máquina do Caumo. Cravou o jackpot, ganha acesso ao VIP e uma banca pra começar. Grátis.",
+    titulo: "Roleta do Caumo — gira e leva VIP + banca",
+    descricao: "Gira a roleta do Caumo. Caiu no prêmio, ganha acesso ao VIP e uma banca pra começar. Grátis.",
   },
 
   oferta: {
     valor: "VIP + Banca",
-    regra: "pra quem cravar o jackpot",
+    regra: "pra quem girar a roleta",
   },
 
   // id vai em todo evento (GA4 e Supabase) pra separar essa ação das rodadas do bolão
   rodada: {
-    id: "jackpot-s39",
-    nome: "Jackpot do Caumo",
+    id: "roleta-s39",
+    nome: "Roleta do Caumo",
     // Encerramento (ISO com fuso). "" desliga o contador.
     encerramento: "2026-09-27T23:59:00-03:00",
-    fechaLabel: "Máquina fecha em",
-    encerradoLabel: "Máquina fechada",
+    fechaLabel: "Roleta fecha em",
+    encerradoLabel: "Roleta fechada",
     jogos: [],
   },
   palpites: [],
 
-  marquee: ["Jackpot do Caumo", "Puxa a alavanca", "Acesso ao VIP", "Banca liberada", "Grátis", "Resgate no WhatsApp"],
+  marquee: ["Roleta do Caumo", "Gira e ganha", "Acesso ao VIP", "Banca liberada", "Grátis", "Resgate no WhatsApp"],
 
-  maquina: {
-    // Letreiro em cima da máquina (antes / depois de cravar)
-    letreiro: "Jackpot",
-    letreiroGanhou: "Jackpot!",
-    label: "Jackpot do Caumo",
-    titulo: "Puxa a alavanca e *crava o jackpot*",
-    subtitulo: "Três setes na linha liberam acesso ao VIP do Caumo e uma banca pra começar. Grátis, sem depósito.",
-    ctaLabel: "Puxar a alavanca",
+  roleta: {
+    label: "Roleta do Caumo",
+    titulo: "Gira a roleta e *desbloqueia* o prêmio",
+    subtitulo: "A roleta libera acesso ao VIP do Caumo e uma banca pra começar. Grátis, sem depósito.",
+    ctaLabel: "Girar a roleta",
     ctaGirando: "Girando",
-    ctaQuase: "Puxar de novo",
-    ctaHint: "Grátis. Um giro e o prêmio já sai.",
-    quaseTitulo: "Quase! Faltou um sete",
-    quaseSub: "Você ainda tem um giro. Puxa de novo.",
-    ganhouTitulo: "Cravou o jackpot",
-    ganhouSub: "Fechando seu bilhete do prêmio",
-    // Símbolos dos rolos. O primeiro é o do jackpot.
-    simbolos: ["7", "BAR", "★", "$", "◆"],
-    // Em qual giro a máquina crava: 1 = ganha de primeira; 2 = o primeiro giro para em "quase" (dois setes) e o segundo crava.
-    giroVencedor: 1,
+    ctaHint: "Grátis. Um giro libera o prêmio.",
+    ganhouTitulo: "Prêmio garantido",
+    ganhouSub: "Preparando o seu bilhete",
     comoFunciona: [
-      "Puxa a alavanca da máquina",
-      "Cravou os três setes, registra o prêmio no WhatsApp",
+      "Gira a roleta",
+      "Caiu no prêmio, registra no WhatsApp",
       "Recebe o acesso ao VIP e a banca",
     ],
+    // Gomos da roleta, em ordem ao redor do círculo. "premio: true" marca onde ela sempre para.
+    // Os demais são decorativos (a roleta nunca para neles) — só dão a sensação real de roleta.
+    gomos: [
+      { texto: "VIP + BANCA", premio: true },
+      { texto: "★" },
+      { texto: "GRÁTIS" },
+      { texto: "◆" },
+      { texto: "BÔNUS" },
+      { texto: "●" },
+      { texto: "VIP" },
+      { texto: "▲" },
+    ],
+    // Voltas completas antes de parar (mais voltas = giro mais demorado e mais suspense)
+    voltas: 7,
+    // Duração total do giro, em ms
+    duracaoMs: 6200,
   },
 
   bilhete: {
-    slipTitulo: "Jackpot do Caumo",
+    slipTitulo: "Roleta do Caumo",
     label: "Seu prêmio",
     titulo: "Registra no WhatsApp pra resgatar",
     subtitulo: "Sem registro o prêmio não é liberado. Aperta o botão que a mensagem já vai com o número do seu bilhete.",
     ctaLabel: "Resgatar no WhatsApp",
     ctaHint: "Abre o WhatsApp com o número do seu prêmio",
-    refazerLabel: "Voltar pra máquina",
+    refazerLabel: "Girar de novo",
     // Linhas do bilhete de prêmio
     premio: [
       { item: "Acesso ao VIP", valor: "Liberado" },
@@ -274,4 +280,4 @@ const jackpot = {
   },
 };
 
-export const config = base.modo === "jackpot" ? { ...base, ...jackpot } : base;
+export const config = base.modo === "roleta" ? { ...base, ...roleta } : base;

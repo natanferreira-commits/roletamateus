@@ -1,27 +1,29 @@
-# Jackpot do Caumo — máquina caça-níquel, VIP + banca pra quem cravar
+# Roleta do Caumo — roleta premiada, VIP + banca pra quem girar
 
 Página mobile-first com dois modos, escolhidos por `modo` no [`app/config.js`](app/config.js):
 
-- **`jackpot`** (ativo): máquina caça-níquel na primeira tela → puxa a alavanca → três setes → bilhete do prêmio (acesso ao VIP + banca) → botão fixo que abre o WhatsApp com o número do bilhete pra resgatar.
+- **`roleta`** (ativo): roleta premiada na primeira tela → gira → para no prêmio → bilhete do prêmio (acesso ao VIP + banca) → botão fixo que abre o WhatsApp com o número do bilhete pra resgatar.
 - **`bolao`**: landing (hero, oferta, como funciona, aviso) → palpites, dois por jogo da rodada → bilhete com número → registro no WhatsApp. Última rodada: Brasileirão 2026, 28ª rodada, sábado 19/09 (10 palpites). A versão da Libertadores está na tag `liberta-quartas-2026`.
 
-## Modo jackpot
+## Modo roleta
 
-Tudo fica na seção `jackpot` no fim do `config.js`. Ela sobrescreve `seo`, `marquee`, `oferta`, `rodada`, `bilhete` e `aviso` do bolão, e adiciona `maquina`:
+Tudo fica na seção `roleta` no fim do `config.js`. Ela sobrescreve `seo`, `marquee`, `oferta`, `rodada`, `bilhete` e `aviso` do bolão, e adiciona `roleta`:
 
 | Campo | O que é |
 | --- | --- |
-| `maquina.simbolos` | Símbolos dos rolos. O primeiro é o do jackpot (três dele na linha do meio = cravou). |
-| `maquina.giroVencedor` | `1` crava de primeira. `2` faz o primeiro giro parar em "quase" (dois setes) e o segundo cravar. |
-| `maquina.letreiro` / `letreiroGanhou` | Texto do letreiro em cima da máquina, antes e depois de cravar. |
-| `maquina.titulo`, `subtitulo`, `ctaLabel`, `ctaHint`, `comoFunciona` | Copy da tela da máquina. |
-| `bilhete.premio` | Linhas do bilhete do prêmio (`item` / `valor`). `premioNome` é o que vai gravado no Supabase. |
+| `roleta.gomos` | Gomos da roda, em ordem. `{ texto, premio: true }` marca o único gomo onde ela sempre para; os outros são decorativos. |
+| `roleta.voltas` | Voltas completas antes de parar. Mais voltas = giro mais demorado e mais suspense. |
+| `roleta.duracaoMs` | Duração total do giro. O ponteiro "tec-teca" no mesmo ritmo da desaceleração real, calculado a partir dessa curva — não é só decoração solta. |
+| `roleta.titulo`, `subtitulo`, `ctaLabel`, `ctaHint`, `comoFunciona` | Copy da tela da roleta. |
+| `bilhete.premio` | Linhas do bilhete do prêmio (`item` / `valor`). `premioNome` é o que vai gravado no Supabase e aparece no chip do bilhete. |
 | `rodada.id` | Vai em todo evento (GA4 e Supabase). Troque a cada ação nova pra separar no `/admin`. |
 | `rodada.encerramento`, `fechaLabel`, `encerradoLabel` | Contador no rodapé fixo. |
 
-A máquina sempre para no resultado definido pelo `giroVencedor`: não existe sorteio, todo mundo que puxa crava.
+A roleta sempre para no gomo marcado como `premio: true`: não existe sorteio de verdade, todo mundo que gira ganha. Os outros gomos só dão a sensação real de roleta — ela nunca para neles.
 
-Eventos: `cta_start` (primeira puxada), `giro` (puxadas seguintes), `quase`, `jackpot`, `bilhete_view`, `whatsapp_click`. O bilhete é salvo na mesma tabela `bilhetes`, com o prêmio e o número de giros no campo `palpites`, então o `/admin` funciona sem mudar o banco.
+Eventos: `cta_start` (girou), `roleta_premio` (parou no prêmio), `bilhete_view`, `whatsapp_click`. O bilhete é salvo na mesma tabela `bilhetes`, com o prêmio no campo `palpites`, então o `/admin` funciona sem mudar o banco.
+
+O visual evita clichê de mesa de cassino (sem vermelho/preto, sem ficha, sem carta): paleta dourada/escura igual ao resto do site, com glow e anéis suaves atrás da roda em vez de luzes piscando. A tela de prêmio também é mais sóbria que uma tela de "vitória" — um chip único com o nome do prêmio, confete discreto, sem flash.
 
 ## Modo bolão
 

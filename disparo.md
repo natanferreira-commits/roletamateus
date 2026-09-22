@@ -1,14 +1,14 @@
-# Mensagens de disparo — Jackpot do Caumo
+# Mensagens de disparo — Roleta do Caumo
 
-Quem fala é o Mateus, em primeira pessoa. A máquina fecha domingo 27/09 às 23h59.
+Quem fala é o Mateus, em primeira pessoa. A roleta fecha domingo 27/09 às 23h59.
 
 ## 1. Disparo principal
 
-📢 JACKPOT DO CAUMO
+📢 ROLETA DO CAUMO
 
-Essa semana a rodada tá fraca, então mudei o jogo: montei uma máquina de jackpot pra vocês.
+A rodada dessa semana tá fraca, então mudei a parada: montei uma roleta premiada pra vocês.
 
-Puxou a alavanca e cravou os três setes? Leva:
+Gira a roleta e leva:
 ✅ Acesso ao meu grupo VIP
 ✅ Banca pra começar a apostar
 
@@ -16,13 +16,13 @@ Grátis, sem depósito. Leva 30 segundos.
 
 👉 https://quiz.mateuscaumo.com.br
 
-Cravou, registra o bilhete aqui no WhatsApp que eu libero.
+Caiu no prêmio, registra o bilhete aqui no WhatsApp que eu libero.
 
 ## 2. Lembrete (meio da semana)
 
-⏰ A máquina ainda tá aberta
+⏰ A roleta ainda tá girando
 
-Quem não puxou a alavanca ainda: três setes = VIP + banca. Grátis.
+Quem ainda não girou: acesso ao VIP + banca. Grátis.
 
 Fecha domingo à noite.
 
@@ -30,9 +30,9 @@ Fecha domingo à noite.
 
 ## 3. Último aviso (domingo)
 
-🎰 Últimas horas do jackpot
+🎡 Últimas horas da roleta
 
-Fecha hoje às 23h59. Puxa a alavanca, crava os setes e registra o bilhete aqui.
+Fecha hoje às 23h59. Gira a roleta e registra o bilhete aqui.
 
 👉 https://quiz.mateuscaumo.com.br
 
