@@ -922,12 +922,6 @@ h1 .hl {
 .roleta-disco.girando {
   transition: transform var(--roleta-dur, 6000ms) cubic-bezier(0.1, 0.82, 0.14, 1);
 }
-/* moldura entre a roda e o anel de lâmpadas */
-.roleta-moldura {
-  fill: none;
-  stroke: #2a1f08;
-  stroke-width: 14;
-}
 .gomo {
   fill: #1c1e30;
   stroke: rgba(5, 6, 12, 0.65);
@@ -936,13 +930,13 @@ h1 .hl {
 .gomo.par {
   fill: #262a42;
 }
-.gomo-texto {
-  font-family: var(--font);
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 0.01em;
-  fill: var(--text);
-  text-transform: uppercase;
+/* alguns gomos ganham um tom dourado só por variedade visual — nunca é só o
+   prêmio real que fica diferente dos outros (ver comentário no config.js) */
+.gomo.dourado {
+  fill: #6b4d16;
+}
+.gomo-icone {
+  font-size: 28px;
 }
 /* o gomo do prêmio real não tem destaque nenhum antes de girar — só ganha
    cor e brilho quando a roleta realmente para nele (ver .roleta.ganhou abaixo) */
@@ -1008,10 +1002,6 @@ h1 .hl {
 .roleta.ganhou .gomo.premio {
   fill: var(--gold);
   animation: premioPulsa 0.8s ease-in-out infinite alternate;
-}
-.roleta.ganhou .gomo-texto.premio {
-  fill: #140f02;
-  font-weight: 900;
 }
 .roleta.ganhou .roleta-borda {
   animation: premioPulsa 0.8s ease-in-out infinite alternate;

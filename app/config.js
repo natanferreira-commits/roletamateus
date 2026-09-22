@@ -201,8 +201,8 @@ const roleta = {
   },
 
   oferta: {
-    valor: "VIP + Banca",
-    regra: "pra quem girar a roleta",
+    valor: "8 prêmios",
+    regra: "concorrendo na roleta",
   },
 
   // id vai em todo evento (GA4 e Supabase) pra separar essa ação das rodadas do bolão
@@ -217,12 +217,12 @@ const roleta = {
   },
   palpites: [],
 
-  marquee: ["Roleta do Caumo", "Gira e ganha", "Acesso ao VIP", "Banca liberada", "Grátis", "Resgate no WhatsApp"],
+  marquee: ["Roleta do Caumo", "8 prêmios", "VIP", "iPhone", "Freebet", "Camisa oficial", "Grátis"],
 
   roleta: {
     label: "Roleta do Caumo",
-    titulo: "Gira a roleta e *desbloqueia* o prêmio",
-    subtitulo: "A roleta libera acesso ao VIP do Caumo e uma banca pra começar. Grátis, sem depósito.",
+    titulo: "Gira a roleta e *desbloqueia* seu prêmio",
+    subtitulo: "8 prêmios concorrendo: VIP, banca, freebet, camisa oficial e mais. Grátis, sem depósito.",
     ctaLabel: "Girar a roleta",
     ctaGirando: "Girando",
     ctaHint: "Grátis. Um giro libera o prêmio.",
@@ -236,15 +236,17 @@ const roleta = {
     // Gomos da roleta, em ordem ao redor do círculo. "premio: true" marca onde ela sempre para.
     // Os demais são decorativos (a roleta nunca para neles) — dão variedade real de prêmios,
     // pra não parecer que só tem um prêmio possível (roleta "viciada").
+    // "dourado: true" pinta o gomo de dourado só por variedade visual — não é o prêmio real,
+    // que nunca é destacado (se destacasse só ele, ia entregar o "pulo do gato" antes de girar).
     gomos: [
-      { texto: "VIP + BANCA", premio: true },
-      { texto: "CAMISA OFICIAL" },
-      { texto: "IPHONE" },
-      { texto: "APOSTA BLINDADA" },
-      { texto: "FREEBET" },
-      { texto: "CASHBACK" },
-      { texto: "ACESSO VIP" },
-      { texto: "GIRO EXTRA" },
+      { texto: "VIP + BANCA", icone: "👑", premio: true },
+      { texto: "CAMISA OFICIAL", icone: "👕", dourado: true },
+      { texto: "IPHONE", icone: "📱" },
+      { texto: "APOSTA BLINDADA", icone: "🛡️" },
+      { texto: "FREEBET", icone: "🎟️", dourado: true },
+      { texto: "CASHBACK", icone: "💸" },
+      { texto: "ACESSO VIP", icone: "🔑" },
+      { texto: "GIRO EXTRA", icone: "🔄", dourado: true },
     ],
     // Voltas completas antes de parar (mais voltas = giro mais demorado e mais suspense)
     voltas: 7,

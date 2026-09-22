@@ -603,7 +603,6 @@ function Roda({ gomos, deg, girando }) {
   const seg = 360 / n;
   return (
     <svg viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`} className="roleta-svg">
-      <circle cx={CENTRO} cy={CENTRO} r={ANEL_R + 12} className="roleta-moldura" />
       <g
         className={girando ? "roleta-disco girando" : "roleta-disco"}
         style={{ transform: `rotate(${deg}deg)`, transformOrigin: `${CENTRO}px ${CENTRO}px` }}
@@ -612,29 +611,22 @@ function Roda({ gomos, deg, girando }) {
           const a0 = i * seg;
           const a1 = a0 + seg;
           const meio = a0 + seg / 2;
-          const pTexto = pontoCirculo(CENTRO, CENTRO, RAIO * 0.66, meio);
+          const pIcone = pontoCirculo(CENTRO, CENTRO, RAIO * 0.62, meio);
           let rot = meio;
           if (rot > 90 && rot < 270) rot += 180;
-          // rótulos com espaço (ex: "VIP + BANCA") quebram em duas linhas pra caber no gomo
-          const linhas = g.texto.includes(" ") ? g.texto.split(" ") : [g.texto];
-          const lh = 11;
-          const dyInicial = -((linhas.length - 1) * lh) / 2;
+          const classe = `${g.premio ? " premio" : ""}${g.dourado ? " dourado" : ""}${i % 2 ? " par" : ""}`;
           return (
             <g key={i}>
-              <path d={fatiaPath(CENTRO, CENTRO, RAIO, a0, a1)} className={`gomo${g.premio ? " premio" : ""}${i % 2 ? " par" : ""}`} />
+              <path d={fatiaPath(CENTRO, CENTRO, RAIO, a0, a1)} className={`gomo${classe}`} />
               <text
-                x={pTexto.x}
-                y={pTexto.y}
-                transform={`rotate(${rot} ${pTexto.x} ${pTexto.y})`}
-                className={`gomo-texto${g.premio ? " premio" : ""}`}
+                x={pIcone.x}
+                y={pIcone.y}
+                transform={`rotate(${rot} ${pIcone.x} ${pIcone.y})`}
+                className="gomo-icone"
                 textAnchor="middle"
-                dominantBaseline="middle"
+                dominantBaseline="central"
               >
-                {linhas.map((linha, li) => (
-                  <tspan key={li} x={pTexto.x} dy={li === 0 ? dyInicial : lh}>
-                    {linha}
-                  </tspan>
-                ))}
+                {g.icone || g.texto}
               </text>
             </g>
           );
