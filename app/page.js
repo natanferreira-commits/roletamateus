@@ -617,7 +617,7 @@ function Roda({ gomos, deg, girando }) {
           if (rot > 90 && rot < 270) rot += 180;
           // rótulos com espaço (ex: "VIP + BANCA") quebram em duas linhas pra caber no gomo
           const linhas = g.texto.includes(" ") ? g.texto.split(" ") : [g.texto];
-          const lh = 13;
+          const lh = 11;
           const dyInicial = -((linhas.length - 1) * lh) / 2;
           return (
             <g key={i}>
